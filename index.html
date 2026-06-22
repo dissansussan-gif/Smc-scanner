@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMC 26 Passport Portal</title>
+    <title>SMC 26 Portal</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -29,12 +29,39 @@
         }
         h2, h3 { text-align: center; color: #f4f6f9; margin-top: 0; }
         
-        /* Upload Interface Box */
+        /* Navigation Page Tabs */
+        .nav-tabs {
+            display: none;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #171d29;
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .tab-btn {
+            background: transparent;
+            color: #a0aec0;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            width: 48%;
+            font-size: 0.95rem;
+        }
+        .tab-btn.active {
+            background: #ff6b00;
+            color: white;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* Upload styling */
         .upload-section {
             background: #243146;
             padding: 20px;
             border-radius: 12px;
-            margin-bottom: 20px;
             text-align: center;
             border: 2px dashed #ff6b00;
         }
@@ -51,9 +78,10 @@
         }
         .db-status { font-size: 0.9rem; color: #a0aec0; margin-top: 8px; }
 
+        /* Scanner Display */
         #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #171d29; margin-bottom: 20px; }
         
-        /* Guest Profile Card Display styling */
+        /* Ticket Scan Card */
         .ticket-card {
             margin: 20px 0;
             background: #171d29;
@@ -69,13 +97,12 @@
         .status-duplicate { background-color: #f59e0b; }
         .ticket-body { padding: 20px; }
         .field-group { margin-bottom: 14px; }
-        .field-label { font-size: 0.75rem; text-transform: uppercase; color: #718096; letter-spacing: 1px; }
+        .field-label { font-size: 0.75rem; text-transform: uppercase; color: #718096; }
         .field-value { font-size: 1.05rem; color: #edf2f7; font-weight: 500; }
         .founder-badge { display: inline-block; background: #ff6b00; color: black; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
 
-        /* Links Generator List styling */
-        .generator-panel { margin-top: 30px; display: none; background: #171d29; padding: 15px; border-radius: 12px; }
-        .table-wrapper { overflow-x: auto; max-height: 350px; margin-top: 15px; }
+        /* Link Matrix Table */
+        .table-wrapper { overflow-x: auto; max-height: 400px; margin-top: 15px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         th, td { padding: 12px; border-bottom: 1px solid #2d3748; }
         th { background-color: #243146; color: #a0aec0; }
@@ -86,44 +113,49 @@
 <body>
 
 <div class="container">
-    <h2>SMC 26 Local Engine Portal</h2>
+    <h2>SMC 26 Control Hub</h2>
     
-    <div class="upload-section" id="uploadBox">
-        <h3>Import Your Guest Database</h3>
-        <p style="font-size: 0.9rem; margin: 0; color: #a0aec0;">Download your sheet as a .csv file, then import it below</p>
-        <label class="upload-btn" for="csvFile">Choose CSV File</label>
-        <input type="file" id="csvFile" accept=".csv">
-        <div id="dbStatus" class="db-status">No sheet imported yet</div>
+    <div class="nav-tabs" id="navTabs">
+        <button class="tab-btn active" onclick="switchPage('generatorPage', this)">📋 Link Generator</button>
+        <button class="tab-btn" onclick="switchPage('scannerPage', this)">📷 Live Scanner</button>
     </div>
 
-    <div id="scannerSection" style="display: none;">
-        <h3>Live Scanner Check-In</h3>
-        <div id="reader"></div>
-    </div>
+    <div id="generatorPage" class="page active">
+        <div class="upload-section" id="uploadBox">
+            <h3>Import Database Spreadsheet</h3>
+            <p style="font-size: 0.9rem; margin: 0; color: #a0aec0;">Upload your downloaded CSV data file below</p>
+            <label class="upload-btn" for="csvFile">Choose CSV File</label>
+            <input type="file" id="csvFile" accept=".csv">
+            <div id="dbStatus" class="db-status">No file imported yet</div>
+        </div>
 
-    <div id="ticketCard" class="ticket-card">
-        <div id="statusBanner" class="status-header">Reading data...</div>
-        <div class="ticket-body">
-            <div class="field-group"><div class="field-label">Full Name</div><div id="displayName" class="field-value">-</div></div>
-            <div class="field-group"><div class="field-label">Church / Ministry</div><div id="displayChurch" class="field-value">-</div></div>
-            <div class="field-group"><div class="field-label">Position / Role</div><div id="displayRole" class="field-value">-</div></div>
-            <div class="field-group"><div class="field-label">Status Details</div><div id="displayStatus" class="field-value">-</div></div>
+        <div id="generatorPanel" style="margin-top: 25px; display: none;">
+            <h3>Founder Passport Passes</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Founder Name</th>
+                            <th>Action Toolkit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="generatorTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <div id="generatorPanel" class="generator-panel">
-        <h3>Generated Passport Passes</h3>
-        <p style="font-size: 0.85rem; color: #a0aec0;">Showing custom system generation links exclusively for matched criteria.</p>
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Founder In-Person Name</th>
-                        <th>Action Toolkit</th>
-                    </tr>
-                </thead>
-                <tbody id="generatorTableBody"></tbody>
-            </table>
+    <div id="scannerPage" class="page">
+        <h3>Live Entry Scanner</h3>
+        <div id="reader"></div>
+
+        <div id="ticketCard" class="ticket-card">
+            <div id="statusBanner" class="status-header">Reading Code...</div>
+            <div class="ticket-body">
+                <div class="field-group"><div class="field-label">Full Name</div><div id="displayName" class="field-value">-</div></div>
+                <div class="field-group"><div class="field-label">Church / Ministry</div><div id="displayChurch" class="field-value">-</div></div>
+                <div class="field-group"><div class="field-label">Status Details</div><div id="displayStatus" class="field-value">-</div></div>
+            </div>
         </div>
     </div>
 </div>
@@ -133,9 +165,26 @@
 <script>
     let localDatabase = {};
     let checkedInCache = new Set();
+    let html5QrcodeScanner = null;
     const BASE_SCANNER_URL = window.location.origin + window.location.pathname;
 
-    // Handle local text row parsing configuration mapping
+    // Page switcher manager
+    function switchPage(pageId, btnElement) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        document.getElementById(pageId).classList.add('active');
+        btnElement.classList.add('active');
+
+        // Turn camera ON only if on the scanner page, turn it OFF if they leave
+        if (pageId === 'scannerPage') {
+            startBackCamera();
+        } else {
+            stopCamera();
+        }
+    }
+
+    // Process Spreadsheet Import mapping to your custom image column headers
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -146,26 +195,29 @@
             complete: function(results) {
                 localDatabase = {};
                 const tableBody = document.getElementById('generatorTableBody');
-                tableBody.innerHTML = ""; // Clear existing rows
+                tableBody.innerHTML = ""; 
                 
                 let criteriaMatchCount = 0;
 
                 results.data.forEach(row => {
-                    const id = row["Guest ID"] || row["ID"];
+                    const id = row["Guest ID"];
                     if(id) {
                         const cleanId = id.trim();
-                        // Standardize keys dynamically from headings row array values
+                        
+                        // Parse name cells if split across columns C and D
+                        const firstName = row["FULL NAME"] || "";
+                        const lastName = row["_2"] || row["_3"] || row["_4"] || ""; 
+                        const combinedName = `${firstName} ${lastName}`.trim();
+
                         localDatabase[cleanId] = {
                             title: row["Title"] || "",
-                            name: row["Full Name"] || row["Name"] || "",
-                            church: row["Church"] || row["Church / Ministry"] || "",
-                            role: row["Role"] || row["Position / Role"] || "",
-                            specialStatus: row["Special Status"] || row["Status"] || "",
+                            name: combinedName || "Blank Entry",
+                            church: row["CHURCH"] || "N/A",
+                            specialStatus: String(row["Special Status"]).trim(),
                             dinnerAccess: String(row["Dinner Access"]).toUpperCase() === "TRUE"
                         };
 
-                        // CRITERIA FILTER CHECK: Only generate rows for "Founder in-person"
-                        if (String(localDatabase[cleanId].specialStatus).trim() === "Founder in-person") {
+                        if (localDatabase[cleanId].specialStatus === "Founder in-person") {
                             criteriaMatchCount++;
                             const generatedLink = `${BASE_SCANNER_URL}?id=${cleanId}`;
                             const tr = document.createElement('tr');
@@ -183,19 +235,41 @@
 
                 const totalRows = Object.keys(localDatabase).length;
                 if(totalRows > 0) {
-                    document.getElementById('dbStatus').innerText = `✅ Successfully imported ${totalRows} rows. Found ${criteriaMatchCount} matching founders!`;
+                    document.getElementById('dbStatus').innerText = `✅ Loaded ${totalRows} rows. Found ${criteriaMatchCount} matches!`;
                     document.getElementById('dbStatus').style.color = "#10b981";
-                    document.getElementById('scannerSection').style.display = "block";
+                    document.getElementById('navTabs').style.display = "flex";
                     document.getElementById('generatorPanel').style.display = "block";
                     document.getElementById('uploadBox').style.border = "2px solid #10b981";
 
-                    // Deep-link direct verification checking routing logic
+                    // URL deep link routing check
                     const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.has('id')) { processAccess(urlParams.get('id')); }
+                    if (urlParams.has('id')) {
+                        switchPage('scannerPage', document.querySelectorAll('.tab-btn')[1]);
+                        processAccess(urlParams.get('id'));
+                    }
                 }
             }
         });
     });
+
+    // Forced Back Camera System Initialization
+    function startBackCamera() {
+        if(html5QrcodeScanner === null) {
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+                fps: 10, 
+                qrbox: 250,
+                // FORCES BACK CAMERA ONLY, DISABLES FRONT CAMERA PROMPTS
+                videoConstraints: { facingMode: { exact: "environment" } } 
+            });
+        }
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
+    }
+
+    function stopCamera() {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear().catch(err => console.log("Camera closing clean..."));
+        }
+    }
 
     function downloadQrCode(guestId, guestName) {
         const qrContainer = document.getElementById('hiddenQr');
@@ -220,17 +294,16 @@
 
         if (!localDatabase[cleanedId]) {
             banner.className = "status-header status-denied";
-            banner.innerText = "❌ Ticket ID Not Found in Imported File";
+            banner.innerText = "❌ Ticket ID Not in Database";
             return;
         }
 
         const guest = localDatabase[cleanedId];
         document.getElementById('displayName').innerText = `${guest.title} ${guest.name}`.trim();
         document.getElementById('displayChurch').innerText = guest.church || "N/A";
-        document.getElementById('displayRole').innerText = guest.role || "N/A";
         
         const statusDiv = document.getElementById('displayStatus');
-        if(String(guest.specialStatus).trim() === "Founder in-person") {
+        if(guest.specialStatus === "Founder in-person") {
             statusDiv.innerHTML = `<span class="founder-badge">⭐ FOUNDER IN-PERSON</span>`;
         } else {
             statusDiv.innerText = guest.specialStatus || "Regular Guest";
@@ -253,13 +326,12 @@
     }
 
     function onScanSuccess(decodedText) {
-        html5QrcodeScanner.clear();
+        stopCamera();
         processAccess(decodedText);
-        setTimeout(() => { html5QrcodeScanner.render(onScanSuccess); }, 4000);
+        setTimeout(() => { startBackCamera(); }, 4000); // 4 seconds reload pause loop
     }
-
-    const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render(onScanSuccess);
+    
+    function onScanError(err) { /* Silent scanner optimization constraint feedback hook */ }
 </script>
 </body>
 </html>
