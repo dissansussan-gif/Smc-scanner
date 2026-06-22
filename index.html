@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMC Access Control System</title>
+    <title>SMC 26 Passport Portal</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: #121824;
             color: #ffffff;
             margin: 0;
@@ -18,216 +20,246 @@
         }
         .container {
             width: 100%;
-            max-width: 450px;
+            max-width: 650px;
             background: #1a2333;
             padding: 20px;
             border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             box-sizing: border-box;
         }
-        h2 {
-            text-align: center;
-            margin-top: 0;
-            color: #f4f6f9;
-            font-size: 1.5rem;
-        }
-        #reader {
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            border: none !important;
+        h2, h3 { text-align: center; color: #f4f6f9; margin-top: 0; }
+        
+        /* Upload Interface Box */
+        .upload-section {
             background: #243146;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 2px dashed #ff6b00;
         }
-        /* Ticket Display Layout (Matching the screenshot style) */
+        .upload-section input { display: none; }
+        .upload-btn {
+            background: #ff6b00;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .db-status { font-size: 0.9rem; color: #a0aec0; margin-top: 8px; }
+
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; background: #171d29; margin-bottom: 20px; }
+        
+        /* Guest Profile Card Display styling */
         .ticket-card {
-            margin-top: 25px;
+            margin: 20px 0;
             background: #171d29;
             border-radius: 12px;
             overflow: hidden;
-            border-top: 6px solid #ff6b00; /* Distinct top accent line */
+            border-top: 6px solid #ff6b00;
             display: none;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-        .status-header {
-            padding: 12px;
-            font-weight: bold;
-            font-size: 1.1rem;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .status-granted { background-color: #10b981; color: white; }
-        .status-denied { background-color: #ef4444; color: white; }
-        .status-duplicate { background-color: #f59e0b; color: white; }
+        .status-header { padding: 12px; font-weight: bold; font-size: 1.1rem; text-align: center; text-transform: uppercase; }
+        .status-granted { background-color: #10b981; }
+        .status-denied { background-color: #ef4444; }
+        .status-duplicate { background-color: #f59e0b; }
+        .ticket-body { padding: 20px; }
+        .field-group { margin-bottom: 14px; }
+        .field-label { font-size: 0.75rem; text-transform: uppercase; color: #718096; letter-spacing: 1px; }
+        .field-value { font-size: 1.05rem; color: #edf2f7; font-weight: 500; }
+        .founder-badge { display: inline-block; background: #ff6b00; color: black; padding: 4px 10px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
 
-        .ticket-body {
-            padding: 25px 20px;
-            text-align: left;
-        }
-        .brand-logo {
-            font-weight: 800;
-            font-size: 1.3rem;
-            color: #ffffff;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .brand-icon {
-            width: 24px;
-            height: 24px;
-            background: linear-gradient(135deg, #0076ff, #ff6b00);
-            border-radius: 6px;
-            transform: rotate(45deg);
-        }
-        .field-group {
-            margin-bottom: 18px;
-        }
-        .field-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: #718096;
-            letter-spacing: 1.5px;
-            margin-bottom: 4px;
-            font-weight: 600;
-        }
-        .field-value {
-            font-size: 1.05rem;
-            color: #edf2f7;
-            font-weight: 500;
-        }
-        .divider {
-            height: 1px;
-            background: #2d3748;
-            margin-bottom: 20px;
-        }
+        /* Links Generator List styling */
+        .generator-panel { margin-top: 30px; display: none; background: #171d29; padding: 15px; border-radius: 12px; }
+        .table-wrapper { overflow-x: auto; max-height: 350px; margin-top: 15px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 12px; border-bottom: 1px solid #2d3748; }
+        th { background-color: #243146; color: #a0aec0; }
+        .gen-btn { background: #0076ff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right: 5px; }
+        #hiddenQr { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>SMC Dinner Check-In</h2>
-    <div id="reader"></div>
+    <h2>SMC 26 Local Engine Portal</h2>
+    
+    <div class="upload-section" id="uploadBox">
+        <h3>Import Your Guest Database</h3>
+        <p style="font-size: 0.9rem; margin: 0; color: #a0aec0;">Download your sheet as a .csv file, then import it below</p>
+        <label class="upload-btn" for="csvFile">Choose CSV File</label>
+        <input type="file" id="csvFile" accept=".csv">
+        <div id="dbStatus" class="db-status">No sheet imported yet</div>
+    </div>
+
+    <div id="scannerSection" style="display: none;">
+        <h3>Live Scanner Check-In</h3>
+        <div id="reader"></div>
+    </div>
 
     <div id="ticketCard" class="ticket-card">
-        <div id="statusBanner" class="status-header">Access Granted</div>
-        
+        <div id="statusBanner" class="status-header">Reading data...</div>
         <div class="ticket-body">
-            <div class="brand-logo">
-                <div class="brand-icon"></div>
-                SMC 26
-            </div>
-            
-            <div class="divider"></div>
+            <div class="field-group"><div class="field-label">Full Name</div><div id="displayName" class="field-value">-</div></div>
+            <div class="field-group"><div class="field-label">Church / Ministry</div><div id="displayChurch" class="field-value">-</div></div>
+            <div class="field-group"><div class="field-label">Position / Role</div><div id="displayRole" class="field-value">-</div></div>
+            <div class="field-group"><div class="field-label">Status Details</div><div id="displayStatus" class="field-value">-</div></div>
+        </div>
+    </div>
 
-            <div class="field-group">
-                <div class="field-label">Full Name</div>
-                <div id="displayName" class="field-value">Pastor Ankomah Prince</div>
-            </div>
-
-            <div class="field-group">
-                <div class="field-label">Church / Ministry</div>
-                <div id="displayChurch" class="field-value">Grace Temple</div>
-            </div>
-
-            <div class="field-group">
-                <div class="field-label">Position / Function / Role</div>
-                <div id="displayRole" class="field-value">Youth Leader</div>
-            </div>
+    <div id="generatorPanel" class="generator-panel">
+        <h3>Generated Passport Passes</h3>
+        <p style="font-size: 0.85rem; color: #a0aec0;">Showing custom system generation links exclusively for matched criteria.</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Founder In-Person Name</th>
+                        <th>Action Toolkit</th>
+                    </tr>
+                </thead>
+                <tbody id="generatorTableBody"></tbody>
+            </table>
         </div>
     </div>
 </div>
 
+<div id="hiddenQr"></div>
+
 <script>
-    // MOCK DATABASE 
-    // In production, this data is pulled from your Google Sheet master file
-    const guestDatabase = {
-        "SMC-001": { 
-            title: "Mr.", 
-            name: "Ankomah Prince", 
-            church: "Grace Temple Assembly", 
-            role: "Youth Organizer", 
-            dinnerAccess: true, 
-            checkedIn: false 
-        },
-        "SMC-002": { 
-            title: "Pastor", 
-            name: "Sussan Dissan", 
-            church: "Faith Ministries", 
-            role: "Head Pastor", 
-            dinnerAccess: false, 
-            checkedIn: false 
-        },
-        "SMC-003": { 
-            title: "Evang.", 
-            name: "John Doe", 
-            church: "Global Revival Church", 
-            role: "Evangelist", 
-            dinnerAccess: true, 
-            checkedIn: true // Simulate someone who already entered
-        }
-    };
+    let localDatabase = {};
+    let checkedInCache = new Set();
+    const BASE_SCANNER_URL = window.location.origin + window.location.pathname;
+
+    // Handle local text row parsing configuration mapping
+    document.getElementById('csvFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                localDatabase = {};
+                const tableBody = document.getElementById('generatorTableBody');
+                tableBody.innerHTML = ""; // Clear existing rows
+                
+                let criteriaMatchCount = 0;
+
+                results.data.forEach(row => {
+                    const id = row["Guest ID"] || row["ID"];
+                    if(id) {
+                        const cleanId = id.trim();
+                        // Standardize keys dynamically from headings row array values
+                        localDatabase[cleanId] = {
+                            title: row["Title"] || "",
+                            name: row["Full Name"] || row["Name"] || "",
+                            church: row["Church"] || row["Church / Ministry"] || "",
+                            role: row["Role"] || row["Position / Role"] || "",
+                            specialStatus: row["Special Status"] || row["Status"] || "",
+                            dinnerAccess: String(row["Dinner Access"]).toUpperCase() === "TRUE"
+                        };
+
+                        // CRITERIA FILTER CHECK: Only generate rows for "Founder in-person"
+                        if (String(localDatabase[cleanId].specialStatus).trim() === "Founder in-person") {
+                            criteriaMatchCount++;
+                            const generatedLink = `${BASE_SCANNER_URL}?id=${cleanId}`;
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name}</b><br><span style="font-size:0.75rem; color:#718096;">ID: ${cleanId}</span></td>
+                                <td>
+                                    <button class="gen-btn" onclick="navigator.clipboard.writeText('${generatedLink}'); alert('Link Copied!');">📋 Copy Link</button>
+                                    <button class="gen-btn" style="background:#ff6b00;" onclick="downloadQrCode('${cleanId}', '${localDatabase[cleanId].name}')">🖼️ Download QR</button>
+                                </td>
+                            `;
+                            tableBody.appendChild(tr);
+                        }
+                    }
+                });
+
+                const totalRows = Object.keys(localDatabase).length;
+                if(totalRows > 0) {
+                    document.getElementById('dbStatus').innerText = `✅ Successfully imported ${totalRows} rows. Found ${criteriaMatchCount} matching founders!`;
+                    document.getElementById('dbStatus').style.color = "#10b981";
+                    document.getElementById('scannerSection').style.display = "block";
+                    document.getElementById('generatorPanel').style.display = "block";
+                    document.getElementById('uploadBox').style.border = "2px solid #10b981";
+
+                    // Deep-link direct verification checking routing logic
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.has('id')) { processAccess(urlParams.get('id')); }
+                }
+            }
+        });
+    });
+
+    function downloadQrCode(guestId, guestName) {
+        const qrContainer = document.getElementById('hiddenQr');
+        qrContainer.innerHTML = ""; 
+        new QRCode(qrContainer, { text: guestId, width: 256, height: 256 });
+        setTimeout(() => {
+            const img = qrContainer.querySelector('img');
+            if(img) {
+                const a = document.createElement('a');
+                a.href = img.src;
+                a.download = `QR_Founder_${guestName.replace(/\s+/g, '_')}.png`;
+                a.click();
+            }
+        }, 300);
+    }
 
     function processAccess(guestId) {
         const card = document.getElementById('ticketCard');
         const banner = document.getElementById('statusBanner');
-        const nameField = document.getElementById('displayName');
-        const churchField = document.getElementById('displayChurch');
-        const roleField = document.getElementById('displayRole');
-
         card.style.display = "block";
+        const cleanedId = guestId.trim();
 
-        // 1. Check if guest is registered
-        if (!guestDatabase[guestId]) {
+        if (!localDatabase[cleanedId]) {
             banner.className = "status-header status-denied";
-            banner.innerText = "❌ Invalid Ticket";
-            nameField.innerText = "Unknown Code Generated";
-            churchField.innerText = "N/A";
-            roleField.innerText = "N/A";
+            banner.innerText = "❌ Ticket ID Not Found in Imported File";
             return;
         }
 
-        const guest = guestDatabase[guestId];
+        const guest = localDatabase[cleanedId];
+        document.getElementById('displayName').innerText = `${guest.title} ${guest.name}`.trim();
+        document.getElementById('displayChurch').innerText = guest.church || "N/A";
+        document.getElementById('displayRole').innerText = guest.role || "N/A";
+        
+        const statusDiv = document.getElementById('displayStatus');
+        if(String(guest.specialStatus).trim() === "Founder in-person") {
+            statusDiv.innerHTML = `<span class="founder-badge">⭐ FOUNDER IN-PERSON</span>`;
+        } else {
+            statusDiv.innerText = guest.specialStatus || "Regular Guest";
+        }
 
-        // Fill data dynamically combines Title + Name
-        nameField.innerText = `${guest.title} ${guest.name}`;
-        churchField.innerText = guest.church;
-        roleField.innerText = guest.role;
-
-        // 2. Evaluate Dinner Access Permissions
         if (!guest.dinnerAccess) {
             banner.className = "status-header status-denied";
             banner.innerText = "❌ Access Denied (No Dinner Pass)";
             return;
         }
-
-        // 3. Evaluate Double Entry Check
-        if (guest.checkedIn) {
+        if (checkedInCache.has(cleanedId)) {
             banner.className = "status-header status-duplicate";
-            banner.innerText = "⚠️ Duplicate Ticket (Already Inside)";
+            banner.innerText = "⚠️ Already Checked In";
             return;
         }
 
-        // 4. Successful Access Granted
-        guest.checkedIn = true; // Mark used locally
+        checkedInCache.add(cleanedId);
         banner.className = "status-header status-granted";
         banner.innerText = "✅ Access Granted";
     }
 
-    // Initialize Camera Scan Rules
-    function onScanSuccess(decodedText, decodedResult) {
-        html5QrcodeScanner.clear(); // Pause camera feed
+    function onScanSuccess(decodedText) {
+        html5QrcodeScanner.clear();
         processAccess(decodedText);
-
-        // Resume scanning loop after 4 seconds for the next attendee
-        setTimeout(() => {
-            html5QrcodeScanner.render(onScanSuccess);
-        }, 4000);
+        setTimeout(() => { html5QrcodeScanner.render(onScanSuccess); }, 4000);
     }
 
     const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
     html5QrcodeScanner.render(onScanSuccess);
 </script>
-
 </body>
-  </html>
+</html>
