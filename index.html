@@ -55,7 +55,9 @@
             display: flex;
             align-items: center;
             gap: 15px;
+            transition: all 0.2s ease;
         }
+        .menu-btn:active { transform: scale(0.98); }
         .menu-btn.primary { border-color: #ff6b00; background: #1f2636; }
         .btn-icon { font-size: 1.6rem; }
         
@@ -78,16 +80,8 @@
             font-size: 0.85rem;
         }
 
-        .sync-box {
-            background: #171d29;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid #ff6b00;
-            margin-bottom: 20px;
-        }
-        .sync-loader-text { font-size: 1rem; font-weight: bold; color: #ff6b00; margin: 5px 0; }
-        .db-status { font-size: 0.95rem; color: #a0aec0; margin-top: 5px; font-weight: 500; }
+        .sync-loader-text { font-size: 1rem; font-weight: bold; color: #ff6b00; margin: 5px 0; text-align: center; }
+        .db-status { font-size: 0.95rem; color: #a0aec0; margin-top: 5px; font-weight: 500; text-align: center; }
 
         #reader { width: 100%; border-radius: 14px; overflow: hidden; background: #171d29; }
         
@@ -106,14 +100,14 @@
         .status-duplicate { background-color: #f59e0b; }
         .ticket-body { padding: 20px; }
         .field-group { margin-bottom: 15px; }
-        .field-label { font-size: 0.75rem; text-transform: uppercase; color: #718096; letter-spacing: 1px; }
+        .field-label { font-size: 0.75rem; text-transform: uppercase; color: #718096; letter-spacing: 1px; margin-bottom: 3px; }
         .field-value { font-size: 1.1rem; color: #edf2f7; font-weight: 500; }
-        .founder-badge { display: inline-block; background: #ff6b00; color: black; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
+        .founder-badge { display: inline-block; background: #ff6b00; color: black; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; margin-top: 4px; }
 
         .table-wrapper { overflow-x: auto; max-height: 400px; margin-top: 10px; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         th, td { padding: 12px; border-bottom: 1px solid #2d3748; }
-        th { background-color: #243146; color: #a0aec0; }
+        th { background-color: #243146; color: #a0aec0; font-weight: 600; }
         .action-btn { background: #0076ff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         #hiddenQr { display: none; }
     </style>
@@ -127,7 +121,7 @@
         <h3>Cloud Linked Dashboard</h3>
         
         <p id="mainLoadingMsg" class="sync-loader-text">🔄 Connecting to Google Drive database...</p>
-        <div id="mainDbStatus" class="db-status" style="text-align:center; margin-bottom:15px;">Awaiting initialization...</div>
+        <div id="mainDbStatus" class="db-status">Awaiting initialization...</div>
 
         <div class="menu-grid">
             <button class="menu-btn primary" onclick="navigateTo('importScreen')">
@@ -192,7 +186,7 @@
 <div id="hiddenQr"></div>
 
 <script>
-    // ⚠️ PASTE YOUR COPIED "PUBLISH TO THE WEB" LINK HERE:
+    // Embedded Live Cloud Database URL Pointing directly to your published sheets path
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbW1qcXEo17SlLlMHnhsbt1PGkaTrzlL1KQ2nIIwGpiS2JIi4wqkfTSysdWZ7hG1FHGLqkccX-zwEj/pub?output=csv";
 
     let localDatabase = {};
@@ -211,14 +205,8 @@
         }
     }
 
-    // Auto-Fetch data from Google Drive Sheet on page launch
+    // Automated Cloud Synchronization Parser Engine Core
     async function syncCloudDatabase() {
-        if(GOOGLE_SHEET_CSV_URL === "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbW1qcXEo17SlLlMHnhsbt1PGkaTrzlL1KQ2nIIwGpiS2JIi4wqkfTSysdWZ7hG1FHGLqkccX-zwEj/pub?output=csv") {
-            document.getElementById('mainLoadingMsg').innerText = "⚠️ Missing Spreadsheet URL Configuration";
-            document.getElementById('mainDbStatus').innerText = "Please update index.html with your published web link.";
-            return;
-        }
-
         try {
             const response = await fetch(GOOGLE_SHEET_CSV_URL);
             const csvText = await response.text();
@@ -233,22 +221,21 @@
                     let founderCount = 0;
 
                     results.data.forEach(row => {
-                        // Dynamically look for any valid casing of Guest ID / ID
-                        const id = row["Guest ID"] || row["ID"] || row["guest id"];
+                        const id = row["Guest ID"] || row["ID"];
                         if(id) {
                             const cleanId = id.trim();
                             
-                            // Dynamically handle split or combined names smoothly
-                            const fName = row["FULL NAME"] || row["Full Name"] || row["Name"] || "";
-                            const lName = row["_2"] || row["_3"] || row["_4"] || row["Unnamed: 3"] || "";
-                            const nameValue = `${fName} ${lName}`.trim();
+                            // Normalizes and builds data structure depending on how columns combine/read
+                            const rawFullName = row["Full Name"] || row["FULL NAME"] || "";
+                            const trailingLabel = row["_2"] || row["_3"] || row["_4"] || row["Unnamed: 3"] || "";
+                            const finalizedName = `${rawFullName} ${trailingLabel}`.trim();
 
                             localDatabase[cleanId] = {
-                                title: (row["Title"] || row["title"] || "").trim(),
-                                name: nameValue || "",
-                                church: (row["CHURCH"] || row["Church"] || "").trim(),
-                                specialStatus: (row["Special Status"] || row["Status"] || "").trim(),
-                                dinnerAccess: String(row["Dinner Access"] || row["dinner access"]).toUpperCase() === "TRUE"
+                                title: (row["Title"] || "").trim(),
+                                name: finalizedName || "",
+                                church: (row["Church"] || row["CHURCH"] || "N/A").trim(),
+                                specialStatus: (row["Special Status"] || "").trim(),
+                                dinnerAccess: String(row["Dinner Access"]).toUpperCase() === "TRUE"
                             };
 
                             if (localDatabase[cleanId].specialStatus === "Founder in-person") {
@@ -256,7 +243,7 @@
                                 const generatedLink = `${BASE_SCANNER_URL}?id=${cleanId}`;
                                 const tr = document.createElement('tr');
                                 tr.innerHTML = `
-                                    <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name || 'Blank Registration'}</b><br><span style="font-size:0.72rem; color:#718096;">ID: ${cleanId}</span></td>
+                                    <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name || 'Blank ID Space'}</b><br><span style="font-size:0.72rem; color:#718096;">ID: ${cleanId}</span></td>
                                     <td>
                                         <button class="action-btn" onclick="navigator.clipboard.writeText('${generatedLink}'); alert('Link Copied!');">📋 Link</button>
                                         <button class="action-btn" style="background:#ff6b00; margin-top:4px;" onclick="downloadQrCode('${cleanId}', '${localDatabase[cleanId].name || cleanId}')">🖼️ QR</button>
@@ -272,7 +259,7 @@
                     document.getElementById('mainDbStatus').innerText = `✅ Connected Live! Loaded ${totalRows} records. (${founderCount} Founders mapped)`;
                     document.getElementById('mainDbStatus').style.color = "#10b981";
 
-                    // Handle link scanning routing injection
+                    // Handle deep links instantly
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.has('id')) {
                         navigateTo('scannerScreen');
@@ -281,8 +268,9 @@
                 }
             });
         } catch(err) {
-            document.getElementById('mainLoadingMsg').innerText = "❌ Connection Failed";
-            document.getElementById('mainDbStatus').innerText = "Could not reach Google Drive link.";
+            document.getElementById('mainLoadingMsg').innerText = "❌ Sync Connection Failed";
+            document.getElementById('mainDbStatus').innerText = "Could not reach Google Sheets. Check publication permissions.";
+            document.getElementById('mainDbStatus').style.color = "#ef4444";
         }
     }
 
@@ -299,7 +287,7 @@
 
     function killHardwareCamera() {
         if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear().catch(err => console.log("Camera closed down."));
+            html5QrcodeScanner.clear().catch(err => console.log("Camera component closed cleanly."));
         }
     }
 
@@ -332,7 +320,7 @@
 
         const guest = localDatabase[cleanedId];
         
-        const formattedDisplayName = guest.name ? `${guest.title} ${guest.name}`.trim() : "Guest Details Not Yet Filled";
+        const formattedDisplayName = guest.name ? `${guest.title} ${guest.name}`.trim() : "Blank (Details Not Filled Yet)";
         document.getElementById('displayName').innerText = formattedDisplayName;
         document.getElementById('displayChurch').innerText = guest.church || "N/A";
         
@@ -350,7 +338,7 @@
         }
         if (checkedInCache.has(cleanedId)) {
             banner.className = "status-header status-duplicate";
-            banner.innerText = "⚠️ Already Checked In";
+            banner.innerText = "⚠️ Duplicate: Already Checked In";
             return;
         }
 
@@ -367,8 +355,8 @@
     
     function onScanError(err) {}
 
-    // Initialize automatically on startup loading cycle
+    // Initialize the cloud sync immediately on app load
     window.onload = syncCloudDatabase;
 </script>
 </body>
-    </html>
+</html>
