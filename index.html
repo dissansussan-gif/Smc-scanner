@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMC 26 Control Hub</title>
+    <title>SMC 26 Live Control Hub</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -33,11 +33,9 @@
         h2 { text-align: center; color: #f4f6f9; margin-top: 0; font-size: 1.6rem; letter-spacing: 0.5px; }
         h3 { text-align: center; color: #a0aec0; margin-top: 0; font-size: 1.2rem; }
         
-        /* App Page/Screen Architecture */
         .app-screen { display: none; }
         .app-screen.active { display: block; }
 
-        /* Main Dashboard Menu Buttons Layout */
         .menu-grid {
             display: flex;
             flex-direction: column;
@@ -57,13 +55,10 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            transition: all 0.2s ease;
         }
-        .menu-btn:active { transform: scale(0.98); }
         .menu-btn.primary { border-color: #ff6b00; background: #1f2636; }
         .btn-icon { font-size: 1.6rem; }
         
-        /* Action Utility Header Bar */
         .screen-header {
             display: flex;
             align-items: center;
@@ -83,32 +78,19 @@
             font-size: 0.85rem;
         }
 
-        /* Uploader Module Layout Box */
-        .upload-box {
+        .sync-box {
             background: #171d29;
-            padding: 30px 20px;
+            padding: 20px;
             border-radius: 12px;
             text-align: center;
-            border: 2px dashed #ff6b00;
+            border: 2px solid #ff6b00;
+            margin-bottom: 20px;
         }
-        .upload-box input { display: none; }
-        .select-file-btn {
-            background: #ff6b00;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            display: inline-block;
-            margin-top: 15px;
-            box-shadow: 0 4px 12px rgba(255,107,0,0.3);
-        }
-        .db-status { font-size: 0.95rem; color: #a0aec0; margin-top: 12px; font-weight: 500; }
+        .sync-loader-text { font-size: 1rem; font-weight: bold; color: #ff6b00; margin: 5px 0; }
+        .db-status { font-size: 0.95rem; color: #a0aec0; margin-top: 5px; font-weight: 500; }
 
-        /* Hardware Scanner Layout Frame Elements */
         #reader { width: 100%; border-radius: 14px; overflow: hidden; background: #171d29; }
         
-        /* Scan Evaluation Results Popup Layout Card */
         .ticket-card {
             margin-top: 25px;
             background: #171d29;
@@ -118,21 +100,20 @@
             display: none;
             box-shadow: 0 8px 25px rgba(0,0,0,0.3);
         }
-        .status-header { padding: 14px; font-weight: bold; font-size: 1.15rem; text-align: center; text-transform: uppercase; letter-spacing: 0.5px; }
+        .status-header { padding: 14px; font-weight: bold; font-size: 1.15rem; text-align: center; text-transform: uppercase; }
         .status-granted { background-color: #10b981; }
         .status-denied { background-color: #ef4444; }
         .status-duplicate { background-color: #f59e0b; }
         .ticket-body { padding: 20px; }
         .field-group { margin-bottom: 15px; }
-        .field-label { font-size: 0.75rem; text-transform: uppercase; color: #718096; letter-spacing: 1px; margin-bottom: 3px; }
+        .field-label { font-size: 0.75rem; text-transform: uppercase; color: #718096; letter-spacing: 1px; }
         .field-value { font-size: 1.1rem; color: #edf2f7; font-weight: 500; }
-        .founder-badge { display: inline-block; background: #ff6b00; color: black; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; margin-top: 4px; }
+        .founder-badge { display: inline-block; background: #ff6b00; color: black; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; }
 
-        /* Data Matrix List Sheet Layout styling */
         .table-wrapper { overflow-x: auto; max-height: 400px; margin-top: 10px; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         th, td { padding: 12px; border-bottom: 1px solid #2d3748; }
-        th { background-color: #243146; color: #a0aec0; font-weight: 600; }
+        th { background-color: #243146; color: #a0aec0; }
         .action-btn { background: #0076ff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         #hiddenQr { display: none; }
     </style>
@@ -142,15 +123,18 @@
 <div class="container">
 
     <div id="menuScreen" class="app-screen active">
-        <h2>SMC 26 Portal</h2>
-        <h3>Event Management Dashboard</h3>
+        <h2>SMC 26 Live Portal</h2>
+        <h3>Cloud Linked Dashboard</h3>
         
+        <p id="mainLoadingMsg" class="sync-loader-text">🔄 Connecting to Google Drive database...</p>
+        <div id="mainDbStatus" class="db-status" style="text-align:center; margin-bottom:15px;">Awaiting initialization...</div>
+
         <div class="menu-grid">
             <button class="menu-btn primary" onclick="navigateTo('importScreen')">
                 <span class="btn-icon">📋</span>
                 <div>
-                    <div>1. Import Database</div>
-                    <span style="font-size: 0.8rem; font-weight: normal; color: #a0aec0;">Upload spreadsheet & manage links</span>
+                    <div>1. View Passport Matrix</div>
+                    <span style="font-size: 0.8rem; font-weight: normal; color: #a0aec0;">Manage auto-generated passport links</span>
                 </div>
             </button>
             
@@ -166,24 +150,16 @@
 
     <div id="importScreen" class="app-screen">
         <div class="screen-header">
-            <span style="font-weight: bold; font-size: 1.1rem;">Database Manager</span>
-            <button class="back-btn" onclick="navigateTo('menuScreen')">⬅️ Back</button>
+            <span style="font-weight: bold; font-size: 1.1rem;">Passport Links</span>
+            <button class="back-btn" onclick="navigateTo('menuScreen')">⬅️ Menu</button>
         </div>
 
-        <div class="upload-box">
-            <p style="margin: 0; font-size: 0.95rem; color: #edf2f7;">Upload your Google Sheet CSV document file</p>
-            <label class="select-file-btn" for="csvFile">Choose CSV File</label>
-            <input type="file" id="csvFile" accept=".csv">
-            <div id="dbStatus" class="db-status">🔴 System offline. No data loaded.</div>
-        </div>
-
-        <div id="generatorPanel" style="margin-top: 30px; display: none;">
-            <h3 style="text-align: left; margin-bottom: 10px;">Founder Passport Links</h3>
+        <div id="generatorPanel">
             <div class="table-wrapper">
                 <table>
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>Founder Name</th>
                             <th>Action Toolkit</th>
                         </tr>
                     </thead>
@@ -202,7 +178,7 @@
         <div id="reader"></div>
 
         <div id="ticketCard" class="ticket-card">
-            <div id="statusBanner" class="status-header">Decoding Core Code...</div>
+            <div id="statusBanner" class="status-header">Decoding Code...</div>
             <div class="ticket-body">
                 <div class="field-group"><div class="field-label">Full Name</div><div id="displayName" class="field-value">-</div></div>
                 <div class="field-group"><div class="field-label">Church / Ministry</div><div id="displayChurch" class="field-value">-</div></div>
@@ -216,6 +192,9 @@
 <div id="hiddenQr"></div>
 
 <script>
+    // ⚠️ PASTE YOUR COPIED "PUBLISH TO THE WEB" LINK HERE:
+    const GOOGLE_SHEET_CSV_URL = "https://drive.google.com/file/d/1WnfK78ubuWnJrQjUm9BN8D5E2RoR-8J4/view?usp=drivesdk";
+
     let localDatabase = {};
     let checkedInCache = new Set();
     let html5QrcodeScanner = null;
@@ -232,59 +211,80 @@
         }
     }
 
-    // UPDATED PARSER: Perfectly matches the clean 'rearranged_founders_data.csv' column headers
-    document.getElementById('csvFile').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    // Auto-Fetch data from Google Drive Sheet on page launch
+    async function syncCloudDatabase() {
+        if(GOOGLE_SHEET_CSV_URL === "https://drive.google.com/file/d/1WnfK78ubuWnJrQjUm9BN8D5E2RoR-8J4/view?usp=drivesdk") {
+            document.getElementById('mainLoadingMsg').innerText = "⚠️ Missing Spreadsheet URL Configuration";
+            document.getElementById('mainDbStatus').innerText = "Please update index.html with your published web link.";
+            return;
+        }
 
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                localDatabase = {};
-                const tableBody = document.getElementById('generatorTableBody');
-                tableBody.innerHTML = ""; 
-                
-                let founderCount = 0;
+        try {
+            const response = await fetch(GOOGLE_SHEET_CSV_URL);
+            const csvText = await response.text();
+            
+            Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    localDatabase = {};
+                    const tableBody = document.getElementById('generatorTableBody');
+                    tableBody.innerHTML = ""; 
+                    let founderCount = 0;
 
-                results.data.forEach(row => {
-                    const id = row["Guest ID"];
-                    if(id) {
-                        const cleanId = id.trim();
-                        
-                        localDatabase[cleanId] = {
-                            title: (row["Title"] || "").trim(),
-                            name: (row["Full Name"] || "").trim(),
-                            church: (row["Church"] || "").trim(),
-                            specialStatus: (row["Special Status"] || "").trim(),
-                            dinnerAccess: String(row["Dinner Access"]).toUpperCase() === "TRUE"
-                        };
+                    results.data.forEach(row => {
+                        // Dynamically look for any valid casing of Guest ID / ID
+                        const id = row["Guest ID"] || row["ID"] || row["guest id"];
+                        if(id) {
+                            const cleanId = id.trim();
+                            
+                            // Dynamically handle split or combined names smoothly
+                            const fName = row["FULL NAME"] || row["Full Name"] || row["Name"] || "";
+                            const lName = row["_2"] || row["_3"] || row["_4"] || row["Unnamed: 3"] || "";
+                            const nameValue = `${fName} ${lName}`.trim();
 
-                        if (localDatabase[cleanId].specialStatus === "Founder in-person") {
-                            founderCount++;
-                            const generatedLink = `${BASE_SCANNER_URL}?id=${cleanId}`;
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name || 'Blank ID'}</b><br><span style="font-size:0.72rem; color:#718096;">ID: ${cleanId}</span></td>
-                                <td>
-                                    <button class="action-btn" onclick="navigator.clipboard.writeText('${generatedLink}'); alert('Link Copied!');">📋 Link</button>
-                                    <button class="action-btn" style="background:#ff6b00; margin-top:4px;" onclick="downloadQrCode('${cleanId}', '${localDatabase[cleanId].name || cleanId}')">🖼️ QR</button>
-                                </td>
-                            `;
-                            tableBody.appendChild(tr);
+                            localDatabase[cleanId] = {
+                                title: (row["Title"] || row["title"] || "").trim(),
+                                name: nameValue || "",
+                                church: (row["CHURCH"] || row["Church"] || "").trim(),
+                                specialStatus: (row["Special Status"] || row["Status"] || "").trim(),
+                                dinnerAccess: String(row["Dinner Access"] || row["dinner access"]).toUpperCase() === "TRUE"
+                            };
+
+                            if (localDatabase[cleanId].specialStatus === "Founder in-person") {
+                                founderCount++;
+                                const generatedLink = `${BASE_SCANNER_URL}?id=${cleanId}`;
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name || 'Blank Registration'}</b><br><span style="font-size:0.72rem; color:#718096;">ID: ${cleanId}</span></td>
+                                    <td>
+                                        <button class="action-btn" onclick="navigator.clipboard.writeText('${generatedLink}'); alert('Link Copied!');">📋 Link</button>
+                                        <button class="action-btn" style="background:#ff6b00; margin-top:4px;" onclick="downloadQrCode('${cleanId}', '${localDatabase[cleanId].name || cleanId}')">🖼️ QR</button>
+                                    </td>
+                                `;
+                                tableBody.appendChild(tr);
+                            }
                         }
-                    }
-                });
+                    });
 
-                const totalRows = Object.keys(localDatabase).length;
-                if(totalRows > 0) {
-                    document.getElementById('dbStatus').innerText = `🟢 Connected. Loaded ${totalRows} records. (${founderCount} Founders mapped)`;
-                    document.getElementById('dbStatus').style.color = "#10b981";
-                    document.getElementById('generatorPanel').style.display = "block";
+                    const totalRows = Object.keys(localDatabase).length;
+                    document.getElementById('mainLoadingMsg').style.display = "none";
+                    document.getElementById('mainDbStatus').innerText = `✅ Connected Live! Loaded ${totalRows} records. (${founderCount} Founders mapped)`;
+                    document.getElementById('mainDbStatus').style.color = "#10b981";
+
+                    // Handle link scanning routing injection
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.has('id')) {
+                        navigateTo('scannerScreen');
+                        setTimeout(() => { processAccess(urlParams.get('id')); }, 500);
+                    }
                 }
-            }
-        });
-    });
+            });
+        } catch(err) {
+            document.getElementById('mainLoadingMsg').innerText = "❌ Connection Failed";
+            document.getElementById('mainDbStatus').innerText = "Could not reach Google Drive link.";
+        }
+    }
 
     function startHardwareBackCamera() {
         if(html5QrcodeScanner === null) {
@@ -299,7 +299,7 @@
 
     function killHardwareCamera() {
         if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear().catch(err => console.log("Camera closed."));
+            html5QrcodeScanner.clear().catch(err => console.log("Camera closed down."));
         }
     }
 
@@ -326,13 +326,12 @@
 
         if (!localDatabase[cleanedId]) {
             banner.className = "status-header status-denied";
-            banner.innerText = "❌ Ticket ID Not Found";
+            banner.innerText = "❌ Ticket ID Not Registered";
             return;
         }
 
         const guest = localDatabase[cleanedId];
         
-        // Handle names gracefully for blank pre-allocated rows
         const formattedDisplayName = guest.name ? `${guest.title} ${guest.name}`.trim() : "Guest Details Not Yet Filled";
         document.getElementById('displayName').innerText = formattedDisplayName;
         document.getElementById('displayChurch').innerText = guest.church || "N/A";
@@ -351,7 +350,7 @@
         }
         if (checkedInCache.has(cleanedId)) {
             banner.className = "status-header status-duplicate";
-            banner.innerText = "⚠️ Duplicate: Already Checked In";
+            banner.innerText = "⚠️ Already Checked In";
             return;
         }
 
@@ -368,11 +367,8 @@
     
     function onScanError(err) {}
 
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('id')) {
-        navigateTo('scannerScreen');
-        setTimeout(() => { processAccess(urlParams.get('id')); }, 500);
-    }
+    // Initialize automatically on startup loading cycle
+    window.onload = syncCloudDatabase;
 </script>
 </body>
-</html>
+    </html>
