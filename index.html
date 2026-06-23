@@ -221,12 +221,10 @@
     let html5QrcodeScanner = null;
     const BASE_SCANNER_URL = window.location.origin + window.location.pathname;
 
-    // Fluid Core Screen Navigation Routing Engine Manager
     function navigateTo(screenId) {
         document.querySelectorAll('.app-screen').forEach(screen => screen.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
 
-        // Manage active camera state based on active screen layout location context
         if (screenId === 'scannerScreen') {
             startHardwareBackCamera();
         } else {
@@ -234,7 +232,7 @@
         }
     }
 
-    // Parse CSV data engine dynamically mapped to your exact screenshot columns arrangement layout
+    // UPDATED PARSER: Perfectly matches the clean 'rearranged_founders_data.csv' column headers
     document.getElementById('csvFile').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -254,29 +252,23 @@
                     if(id) {
                         const cleanId = id.trim();
                         
-                        // Combines names if split over Column C and D
-                        const firstName = row["FULL NAME"] || "";
-                        const lastName = row["_2"] || row["_3"] || row["_4"] || ""; 
-                        const combinedName = `${firstName} ${lastName}`.trim();
-
                         localDatabase[cleanId] = {
-                            title: row["Title"] || "",
-                            name: combinedName || "Unregistered Guest",
-                            church: row["CHURCH"] || "N/A",
-                            specialStatus: String(row["Special Status"]).trim(),
+                            title: (row["Title"] || "").trim(),
+                            name: (row["Full Name"] || "").trim(),
+                            church: (row["Church"] || "").trim(),
+                            specialStatus: (row["Special Status"] || "").trim(),
                             dinnerAccess: String(row["Dinner Access"]).toUpperCase() === "TRUE"
                         };
 
-                        // STRICK ENFORCEMENT FILTER RULE: Only map rows matching "Founder in-person"
                         if (localDatabase[cleanId].specialStatus === "Founder in-person") {
                             founderCount++;
                             const generatedLink = `${BASE_SCANNER_URL}?id=${cleanId}`;
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
-                                <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name}</b><br><span style="font-size:0.72rem; color:#718096;">ID: ${cleanId}</span></td>
+                                <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name || 'Blank ID'}</b><br><span style="font-size:0.72rem; color:#718096;">ID: ${cleanId}</span></td>
                                 <td>
                                     <button class="action-btn" onclick="navigator.clipboard.writeText('${generatedLink}'); alert('Link Copied!');">📋 Link</button>
-                                    <button class="action-btn" style="background:#ff6b00; margin-top:4px;" onclick="downloadQrCode('${cleanId}', '${localDatabase[cleanId].name}')">🖼️ QR</button>
+                                    <button class="action-btn" style="background:#ff6b00; margin-top:4px;" onclick="downloadQrCode('${cleanId}', '${localDatabase[cleanId].name || cleanId}')">🖼️ QR</button>
                                 </td>
                             `;
                             tableBody.appendChild(tr);
@@ -294,13 +286,12 @@
         });
     });
 
-    // Enforce strict Environment Rear/Back Camera capture protocols execution routing
     function startHardwareBackCamera() {
         if(html5QrcodeScanner === null) {
             html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
                 fps: 10, 
                 qrbox: 250,
-                videoConstraints: { facingMode: { exact: "environment" } } // STRICT REAR CAMERA ONLY FORCING PROMPT LOOP
+                videoConstraints: { facingMode: { exact: "environment" } }
             });
         }
         html5QrcodeScanner.render(onScanSuccess, onScanError);
@@ -308,7 +299,7 @@
 
     function killHardwareCamera() {
         if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear().catch(err => console.log("Camera component closed cleanly."));
+            html5QrcodeScanner.clear().catch(err => console.log("Camera closed."));
         }
     }
 
@@ -340,7 +331,10 @@
         }
 
         const guest = localDatabase[cleanedId];
-        document.getElementById('displayName').innerText = `${guest.title} ${guest.name}`.trim();
+        
+        // Handle names gracefully for blank pre-allocated rows
+        const formattedDisplayName = guest.name ? `${guest.title} ${guest.name}`.trim() : "Guest Details Not Yet Filled";
+        document.getElementById('displayName').innerText = formattedDisplayName;
         document.getElementById('displayChurch').innerText = guest.church || "N/A";
         
         const statusDiv = document.getElementById('displayStatus');
@@ -369,18 +363,16 @@
     function onScanSuccess(decodedText) {
         killHardwareCamera();
         processAccess(decodedText);
-        setTimeout(() => { startHardwareBackCamera(); }, 4000); // 4-second refresh loop
+        setTimeout(() => { startHardwareBackCamera(); }, 4000);
     }
     
-    function onScanError(err) { /* Hardware scanner console framework feed handler hook */ }
+    function onScanError(err) {}
 
-    // Immediate dynamic link execution redirection hook handler context routing validation
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('id')) {
         navigateTo('scannerScreen');
-        // Fallback delay allows scanner module UI rendering processes to anchor gracefully
         setTimeout(() => { processAccess(urlParams.get('id')); }, 500);
     }
 </script>
 </body>
-                </html>
+</html>
