@@ -7,7 +7,6 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -23,7 +22,7 @@
         }
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             background: #1a2333;
             padding: 25px 20px;
             border-radius: 20px;
@@ -86,9 +85,6 @@
 
         #reader { width: 100%; border-radius: 14px; overflow: hidden; background: #171d29; }
         
-        #reader border { border: none !important; }
-        #reader select { display: none !important; }
-        
         .ticket-card {
             margin-top: 25px;
             background: #171d29;
@@ -108,79 +104,12 @@
         .field-value { font-size: 1.1rem; color: #edf2f7; font-weight: 500; }
         .founder-badge { display: inline-block; background: #ff6b00; color: black; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; margin-top: 4px; }
 
-        .qr-grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-            max-height: 480px;
-            overflow-y: auto;
-            padding-right: 5px;
-        }
-        .qr-card {
-            background: #171d29;
-            border: 1px solid #2d3748;
-            border-radius: 12px;
-            padding: 12px;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .qr-card-name {
-            font-size: 0.8rem;
-            font-weight: bold;
-            color: #edf2f7;
-            margin-bottom: 8px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            height: 2.4em;
-            line-height: 1.2em;
-        }
-        .qr-card-id { font-size: 0.7rem; color: #718096; margin-bottom: 8px; }
-        .qr-display-box {
-            background: white;
-            padding: 6px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            display: inline-block;
-        }
-        .qr-card-actions {
-            display: flex;
-            gap: 6px;
-            width: 100%;
-        }
-        .qr-action-btn {
-            flex: 1;
-            background: #243146;
-            color: white;
-            border: 1px solid #2d3748;
-            padding: 6px 2px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .qr-action-btn.orange { background: #ff6b00; color: white; border: none; }
-        
-        .pdf-compile-btn {
-            background: #ff6b00;
-            color: white;
-            border: none;
-            width: 100%;
-            padding: 14px;
-            border-radius: 10px;
-            font-weight: bold;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
-        }
-        
-        #hiddenEnginePlayground { position: absolute; left: -9999px; top: -9999px; width: 150px; height: 150px; background: white; }
+        .table-wrapper { overflow-x: auto; max-height: 400px; margin-top: 10px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 12px; border-bottom: 1px solid #2d3748; }
+        th { background-color: #243146; color: #a0aec0; font-weight: 600; }
+        .action-btn { background: #0076ff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        #hiddenQr { display: none; }
     </style>
 </head>
 <body>
@@ -198,8 +127,8 @@
             <button class="menu-btn primary" onclick="navigateTo('importScreen')">
                 <span class="btn-icon">📋</span>
                 <div>
-                    <div>1. Passport Matrix & QR Grid</div>
-                    <span style="font-size: 0.8rem; font-weight: normal; color: #a0aec0;">Generate neatly arranged PDF document</span>
+                    <div>1. View Passport Matrix</div>
+                    <span style="font-size: 0.8rem; font-weight: normal; color: #a0aec0;">Manage auto-generated passport links</span>
                 </div>
             </button>
             
@@ -215,14 +144,22 @@
 
     <div id="importScreen" class="app-screen">
         <div class="screen-header">
-            <span style="font-weight: bold; font-size: 1.1rem;">Arranged QR Passports</span>
+            <span style="font-weight: bold; font-size: 1.1rem;">Passport Links</span>
             <button class="back-btn" onclick="navigateTo('menuScreen')">⬅️ Menu</button>
         </div>
 
-        <button class="pdf-compile-btn" id="pdfBtn" onclick="compileArrangedPdf()">📄 Download Organized PDF Booklet</button>
-
         <div id="generatorPanel">
-            <div class="qr-grid-container" id="qrCodeArrangementGrid"></div>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Founder Name</th>
+                            <th>Action Toolkit</th>
+                        </tr>
+                    </thead>
+                    <tbody id="generatorTableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -246,9 +183,10 @@
 
 </div>
 
-<div id="hiddenEnginePlayground"></div>
+<div id="hiddenQr"></div>
 
 <script>
+    // Your exact Google Sheets published CSV URL
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbW1qcXEo17SlLlMHnhsbt1PGkaTrzlL1KQ2nIIwGpiS2JIi4wqkfTSysdWZ7hG1FHGLqkccX-zwEj/pub?output=csv";
 
     let localDatabase = {};
@@ -261,12 +199,13 @@
         document.getElementById(screenId).classList.add('active');
 
         if (screenId === 'scannerScreen') {
-            startHardwareFrontCamera();
+            startHardwareBackCamera();
         } else {
             killHardwareCamera();
         }
     }
 
+    // Automated Cloud Synchronization Parser Engine
     async function syncCloudDatabase() {
         try {
             const response = await fetch(GOOGLE_SHEET_CSV_URL);
@@ -277,8 +216,8 @@
                 skipEmptyLines: true,
                 complete: function(results) {
                     localDatabase = {};
-                    const gridContainer = document.getElementById('qrCodeArrangementGrid');
-                    gridContainer.innerHTML = ""; 
+                    const tableBody = document.getElementById('generatorTableBody');
+                    tableBody.innerHTML = ""; 
                     let founderCount = 0;
 
                     results.data.forEach(row => {
@@ -286,45 +225,31 @@
                         if(id) {
                             const cleanId = id.trim();
                             
+                            // FIXED ROW MAPPER: Directly looks for columns C and D layout from your Google Sheet
                             const firstName = row["FULL NAME"] || row["Full Name"] || "";
                             const lastName = row["_2"] || row["_3"] || row["_4"] || row["Unnamed: 3"] || "";
                             const combinedName = `${firstName} ${lastName}`.trim();
 
                             localDatabase[cleanId] = {
-                                title: (row["Title"] || "").trim(),
+                                title: (row["Title"] || row["title"] || "").trim(),
                                 name: combinedName || "",
                                 church: (row["CHURCH"] || row["Church"] || "N/A").trim(),
-                                specialStatus: (row["Special Status"] || "").trim(),
-                                dinnerAccess: String(row["Dinner Access"] || "TRUE").toUpperCase() === "TRUE"
+                                specialStatus: (row["Special Status"] || row["status"] || "").trim(),
+                                dinnerAccess: String(row["Dinner Access"] || row["DINNER ACCESS"] || "TRUE").toUpperCase() === "TRUE"
                             };
 
                             if (localDatabase[cleanId].specialStatus === "Founder in-person") {
                                 founderCount++;
                                 const generatedLink = `${BASE_SCANNER_URL}?id=${cleanId}`;
-                                
-                                const card = document.createElement('div');
-                                card.className = 'qr-card';
-                                
-                                const displayNameString = localDatabase[cleanId].name ? `${localDatabase[cleanId].title} ${localDatabase[cleanId].name}` : `Blank (${cleanId})`;
-                                
-                                card.innerHTML = `
-                                    <div class="qr-card-name" title="${displayNameString}">${displayNameString}</div>
-                                    <div class="qr-card-id">${cleanId}</div>
-                                    <div class="qr-display-box" id="visual_qr_${cleanId}"></div>
-                                    <div class="qr-card-actions">
-                                        <button class="qr-action-btn" onclick="navigator.clipboard.writeText('${generatedLink}'); alert('Link Copied!');">📋 Link</button>
-                                        <button class="qr-action-btn orange" onclick="downloadSingleQr('${cleanId}', '${localDatabase[cleanId].name || cleanId}')">💾 Save</button>
-                                    </div>
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
+                                    <td><b>${localDatabase[cleanId].title} ${localDatabase[cleanId].name || 'Blank ID Space'}</b><br><span style="font-size:0.72rem; color:#718096;">ID: ${cleanId}</span></td>
+                                    <td>
+                                        <button class="action-btn" onclick="navigator.clipboard.writeText('${generatedLink}'); alert('Link Copied!');">📋 Link</button>
+                                        <button class="action-btn" style="background:#ff6b00; margin-top:4px;" onclick="downloadQrCode('${cleanId}', '${localDatabase[cleanId].name || cleanId}')">🖼️ QR</button>
+                                    </td>
                                 `;
-                                
-                                gridContainer.appendChild(card);
-
-                                new QRCode(document.getElementById(`visual_qr_${cleanId}`), {
-                                    text: cleanId,
-                                    width: 100,
-                                    height: 100,
-                                    correctLevel: QRCode.CorrectLevel.H
-                                });
+                                tableBody.appendChild(tr);
                             }
                         }
                     });
@@ -334,6 +259,7 @@
                     document.getElementById('mainDbStatus').innerText = `✅ Connected Live! Loaded ${totalRows} records. (${founderCount} Founders mapped)`;
                     document.getElementById('mainDbStatus').style.color = "#10b981";
 
+                    // Handle deep links instantly
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.has('id')) {
                         navigateTo('scannerScreen');
@@ -343,95 +269,20 @@
             });
         } catch(err) {
             document.getElementById('mainLoadingMsg').innerText = "❌ Sync Connection Failed";
-            document.getElementById('mainDbStatus').innerText = "Could not reach Google Sheets.";
+            document.getElementById('mainDbStatus').innerText = "Could not reach Google Sheets. Check publication permissions.";
             document.getElementById('mainDbStatus').style.color = "#ef4444";
         }
     }
 
-    async function compileArrangedPdf() {
-        const btn = document.getElementById('pdfBtn');
-        btn.innerText = "⏳ Generating Organized PDF Template...";
-        btn.disabled = true;
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4'); 
-        
-        const playground = document.getElementById('hiddenEnginePlayground');
-
-        const itemsPerPage = 12; 
-        const colWidth = 56;
-        const rowHeight = 62;
-        const startX = 16;
-        const startY = 20;
-
-        let counter = 0;
-        const founderIds = Object.keys(localDatabase).filter(id => localDatabase[id].specialStatus === "Founder in-person");
-
-        for (let i = 0; i < founderIds.length; i++) {
-            const id = founderIds[i];
-            const guest = localDatabase[id];
-
-            if (counter > 0 && counter % itemsPerPage === 0) {
-                doc.addPage();
-            }
-
-            const localIndex = counter % itemsPerPage;
-            const col = localIndex % 3;
-            const row = Math.floor(localIndex / 3);
-
-            const x = startX + (col * colWidth) + (col * 5); 
-            const y = startY + (row * rowHeight) + (row * 3); 
-
-            playground.innerHTML = "";
-            const qrObj = new QRCode(playground, { text: id, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.H });
-            
-            await new Promise(resolve => setTimeout(resolve, 80));
-            const imgEl = playground.querySelector('img');
-            
-            if (imgEl && imgEl.src) {
-                doc.setDrawColor(210, 214, 219);
-                doc.rect(x, y, colWidth, rowHeight - 2);
-
-                doc.addImage(imgEl.src, 'PNG', x + 10, y + 4, 36, 36);
-
-                doc.setFont("Helvetica", "bold");
-                doc.setFontSize(8);
-                doc.setTextColor(20, 24, 33);
-                
-                const rawName = `${guest.title} ${guest.name}`.trim() || "Blank Passport ID";
-                const splitName = doc.splitTextToSize(rawName, colWidth - 6);
-                doc.text(splitName, x + (colWidth / 2), y + 45, { align: "center" });
-
-                doc.setFont("Helvetica", "normal");
-                doc.setFontSize(7);
-                doc.setTextColor(110, 120, 135);
-                doc.text(`ID: ${id}`, x + (colWidth / 2), y + 55, { align: "center" });
-            }
-            counter++;
-        }
-
-        doc.save("SMC26_Organized_Passports.pdf");
-        btn.innerText = "📄 Download Organized PDF Booklet";
-        btn.disabled = false;
-    }
-
-    // ENFORCED FRONT CAMERA CONFIGURATION ONLY
-    function startHardwareFrontCamera() {
+    function startHardwareBackCamera() {
         if(html5QrcodeScanner === null) {
             html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-                fps: 15, 
+                fps: 10, 
                 qrbox: 250,
-                rememberLastUsedCamera: false,
-                supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+                videoConstraints: { facingMode: { exact: "environment" } }
             });
         }
-        // Force the scanner constraint strictly to the user-facing/front camera lens
-        html5QrcodeScanner.render(onScanSuccess, onScanError, { facingMode: "user" });
-        
-        setTimeout(() => {
-            const selectDropdown = document.querySelector("#reader select");
-            if (selectDropdown) selectDropdown.style.display = "none";
-        }, 300);
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
     }
 
     function killHardwareCamera() {
@@ -440,12 +291,12 @@
         }
     }
 
-    function downloadSingleQr(guestId, guestName) {
-        const playground = document.getElementById('hiddenEnginePlayground');
-        playground.innerHTML = "";
-        new QRCode(playground, { text: guestId, width: 256, height: 256, correctLevel: QRCode.CorrectLevel.H });
+    function downloadQrCode(guestId, guestName) {
+        const qrContainer = document.getElementById('hiddenQr');
+        qrContainer.innerHTML = ""; 
+        new QRCode(qrContainer, { text: guestId, width: 256, height: 256 });
         setTimeout(() => {
-            const img = playground.querySelector('img');
+            const img = qrContainer.querySelector('img');
             if(img) {
                 const a = document.createElement('a');
                 a.href = img.src;
@@ -468,7 +319,9 @@
         }
 
         const guest = localDatabase[cleanedId];
-        document.getElementById('displayName').innerText = guest.name ? `${guest.title} ${guest.name}`.trim() : "Blank (Unfilled)";
+        
+        const formattedDisplayName = guest.name ? `${guest.title} ${guest.name}`.trim() : "Blank (Details Not Filled Yet)";
+        document.getElementById('displayName').innerText = formattedDisplayName;
         document.getElementById('displayChurch').innerText = guest.church || "N/A";
         
         const statusDiv = document.getElementById('displayStatus');
@@ -485,7 +338,7 @@
         }
         if (checkedInCache.has(cleanedId)) {
             banner.className = "status-header status-duplicate";
-            banner.innerText = "⚠️ Already Checked In";
+            banner.innerText = "⚠️ Duplicate: Already Checked In";
             return;
         }
 
@@ -497,7 +350,7 @@
     function onScanSuccess(decodedText) {
         killHardwareCamera();
         processAccess(decodedText);
-        setTimeout(() => { startHardwareFrontCamera(); }, 4000);
+        setTimeout(() => { startHardwareBackCamera(); }, 4000);
     }
     
     function onScanError(err) {}
