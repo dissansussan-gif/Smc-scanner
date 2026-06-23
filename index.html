@@ -193,7 +193,7 @@
 
 <script>
     // ⚠️ PASTE YOUR COPIED "PUBLISH TO THE WEB" LINK HERE:
-    const GOOGLE_SHEET_CSV_URL = "https://drive.google.com/file/d/1WnfK78ubuWnJrQjUm9BN8D5E2RoR-8J4/view?usp=drivesdk";
+    const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbW1qcXEo17SlLlMHnhsbt1PGkaTrzlL1KQ2nIIwGpiS2JIi4wqkfTSysdWZ7hG1FHGLqkccX-zwEj/pub?output=csv";
 
     let localDatabase = {};
     let checkedInCache = new Set();
@@ -213,7 +213,7 @@
 
     // Auto-Fetch data from Google Drive Sheet on page launch
     async function syncCloudDatabase() {
-        if(GOOGLE_SHEET_CSV_URL === "https://drive.google.com/file/d/1WnfK78ubuWnJrQjUm9BN8D5E2RoR-8J4/view?usp=drivesdk") {
+        if(GOOGLE_SHEET_CSV_URL === "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbW1qcXEo17SlLlMHnhsbt1PGkaTrzlL1KQ2nIIwGpiS2JIi4wqkfTSysdWZ7hG1FHGLqkccX-zwEj/pub?output=csv") {
             document.getElementById('mainLoadingMsg').innerText = "⚠️ Missing Spreadsheet URL Configuration";
             document.getElementById('mainDbStatus').innerText = "Please update index.html with your published web link.";
             return;
