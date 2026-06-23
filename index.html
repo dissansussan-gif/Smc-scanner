@@ -85,20 +85,6 @@
 
         #reader { width: 100%; border-radius: 14px; overflow: hidden; background: #171d29; }
         
-        /* Custom adjustment to hide native engine select dropdown elements */
-        #reader border { border: none !important; }
-        #reader select { display: none !important; }
-        #reader button {
-            background: #ff6b00 !important;
-            color: white !important;
-            border: none !important;
-            padding: 10px 20px !important;
-            border-radius: 8px !important;
-            font-weight: bold !important;
-            cursor: pointer !important;
-            margin-top: 10px !important;
-        }
-        
         .ticket-card {
             margin-top: 25px;
             background: #171d29;
@@ -200,6 +186,7 @@
 <div id="hiddenQr"></div>
 
 <script>
+    // Your exact Google Sheets published CSV URL
     const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTbW1qcXEo17SlLlMHnhsbt1PGkaTrzlL1KQ2nIIwGpiS2JIi4wqkfTSysdWZ7hG1FHGLqkccX-zwEj/pub?output=csv";
 
     let localDatabase = {};
@@ -218,6 +205,7 @@
         }
     }
 
+    // Automated Cloud Synchronization Parser Engine
     async function syncCloudDatabase() {
         try {
             const response = await fetch(GOOGLE_SHEET_CSV_URL);
@@ -237,6 +225,7 @@
                         if(id) {
                             const cleanId = id.trim();
                             
+                            // FIXED ROW MAPPER: Directly looks for columns C and D layout from your Google Sheet
                             const firstName = row["FULL NAME"] || row["Full Name"] || "";
                             const lastName = row["_2"] || row["_3"] || row["_4"] || row["Unnamed: 3"] || "";
                             const combinedName = `${firstName} ${lastName}`.trim();
@@ -270,6 +259,7 @@
                     document.getElementById('mainDbStatus').innerText = `✅ Connected Live! Loaded ${totalRows} records. (${founderCount} Founders mapped)`;
                     document.getElementById('mainDbStatus').style.color = "#10b981";
 
+                    // Handle deep links instantly
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.has('id')) {
                         navigateTo('scannerScreen');
@@ -284,30 +274,20 @@
         }
     }
 
-    // REMOVED FRONT CAMERA: Enforcing explicit back-camera device constraint properties exclusively
     function startHardwareBackCamera() {
         if(html5QrcodeScanner === null) {
             html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-                fps: 15, 
+                fps: 10, 
                 qrbox: 250,
-                rememberLastUsedCamera: false, // Forces evaluation every instantiation cycle
-                supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+                videoConstraints: { facingMode: { exact: "environment" } }
             });
         }
-        
-        // Pass facingMode directly into initialization thread runtime rules parameters
-        html5QrcodeScanner.render(onScanSuccess, onScanError, { facingMode: "environment" });
-        
-        // Safety interval sweep loops to hide select dropdown boxes from showing entirely
-        setTimeout(() => {
-            const selectDropdown = document.querySelector("#reader select");
-            if (selectDropdown) selectDropdown.style.display = "none";
-        }, 300);
+        html5QrcodeScanner.render(onScanSuccess, onScanError);
     }
 
     function killHardwareCamera() {
         if (html5QrcodeScanner) {
-            html5QrcodeScanner.clear().catch(err => console.log("Camera engine reset."));
+            html5QrcodeScanner.clear().catch(err => console.log("Camera component closed cleanly."));
         }
     }
 
